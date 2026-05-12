@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>凡氏可行｜上癮類型測驗</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--black:#0a0a0a;--dark:#111;--card:#161616;--border:#2a2a2a;--gold:#c9a84c;--gold-dim:#8a6e2f;--red:#c0392b;--white:#e8e8e8;--muted:#555;--serif:'Noto Serif TC',serif;--mono:'Space Mono',monospace;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100vh;background:var(--black);color:var(--white);font-family:var(--serif);}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:0;}
+.wrap{max-width:720px;margin:0 auto;padding:48px 20px 80px;position:relative;z-index:1;}
+.header{text-align:center;margin-bottom:52px;}
+.brand{font-family:var(--mono);font-size:9px;letter-spacing:.4em;color:var(--gold);margin-bottom:14px;text-transform:uppercase;}
+.header h1{font-size:clamp(20px,5vw,30px);font-weight:700;line-height:1.3;margin-bottom:10px;}
+.header p{font-size:12px;color:var(--muted);line-height:1.9;max-width:460px;margin:0 auto;}
+.rule{height:1px;background:linear-gradient(90deg,transparent,var(--border) 20%,var(--border) 80%,transparent);margin:0 0 40px;}
+
+/* Progress */
+.progress-wrap{margin-bottom:36px;}
+.progress-label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:8px;}
+.progress-bar{height:2px;background:var(--border);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--gold);border-radius:2px;transition:width .4s ease;}
+
+/* Question */
+.q-wrap{display:none;animation:fadeUp .35s ease;}
+.q-wrap.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.q-num{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--gold);margin-bottom:10px;}
+.q-text{font-size:clamp(15px,3vw,18px);font-weight:700;line-height:1.6;margin-bottom:8px;}
+.q-sub{font-size:12px;color:var(--muted);margin-bottom:24px;line-height:1.7;}
+.options{display:flex;flex-direction:column;gap:10px;}
+.opt{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:all .2s;text-align:left;}
+.opt:hover{border-color:var(--gold-dim);background:#1a1a1a;}
+.opt.selected{border-color:var(--gold);background:#1c1800;}
+.opt-dot{width:16px;height:16px;border:1px solid var(--muted);border-radius:50%;flex-shrink:0;margin-top:3px;transition:all .2s;}
+.opt.selected .opt-dot{background:var(--gold);border-color:var(--gold);}
+.opt-text{font-size:13px;line-height:1.7;color:var(--white);}
+.opt-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+.opt.selected .opt-text{color:var(--gold);}
+
+.nav-row{display:flex;gap:10px;justify-content:flex-end;margin-top:28px;}
+.btn{padding:12px 24px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;border-radius:2px;cursor:pointer;transition:all .2s;border:none;}
+.btn-back{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn-back:hover{border-color:var(--muted);color:var(--white);}
+.btn-next{background:var(--gold);color:var(--black);font-weight:700;}
+.btn-next:hover{background:#deba5a;}
+.btn-next:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;}
+
+/* Result */
+.result-wrap{display:none;}
+.result-wrap.show{display:block;animation:fadeUp .4s ease;}
+.result-header{text-align:center;padding:32px 0 36px;border-bottom:1px solid var(--border);margin-bottom:36px;}
+.result-tag{font-family:var(--mono);font-size:9px;letter-spacing:.3em;color:var(--gold);margin-bottom:10px;}
+.result-type{font-size:clamp(22px,5vw,32px);font-weight:700;margin-bottom:12px;}
+.result-tagline{font-size:13px;color:var(--muted);line-height:1.8;max-width:480px;margin:0 auto;}
+
+.result-block{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:22px 24px;margin-bottom:16px;}
+.rb-label{font-family:var(--mono);font-size:9px;letter-spacing:.25em;color:var(--gold);margin-bottom:12px;}
+.rb-text{font-size:13px;color:#aaa;line-height:1.9;}
+
+.verdict-block{background:#0d0d0d;border:1px solid var(--border);border-left:3px solid var(--red);border-radius:4px;padding:20px 24px;margin-bottom:16px;}
+.verdict-label{font-family:var(--mono);font-size:9px;letter-spacing:.25em;color:var(--red);margin-bottom:10px;}
+.verdict-text{font-size:14px;font-weight:700;color:var(--white);line-height:1.8;}
+
+.antidote-block{background:#0a0f0a;border:1px solid #1a2a1a;border-left:3px solid #4caf7d;border-radius:4px;padding:20px 24px;margin-bottom:28px;}
+.antidote-label{font-family:var(--mono);font-size:9px;letter-spacing:.25em;color:#4caf7d;margin-bottom:10px;}
+.antidote-text{font-size:13px;color:#888;line-height:1.9;}
+
+/* Score bars */
+.scores-wrap{margin-bottom:24px;}
+.score-row{margin-bottom:12px;}
+.score-row-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px;}
+.score-name{color:var(--white);}
+.score-pct{font-family:var(--mono);color:var(--muted);}
+.score-track{height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.score-bar{height:100%;border-radius:2px;transition:width 1s ease;}
+
+.download-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:16px;background:var(--gold);color:var(--black);font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.15em;border:none;border-radius:2px;cursor:pointer;transition:all .2s;margin-bottom:10px;}
+.download-btn:hover{background:#deba5a;}
+.reset-btn{display:block;width:100%;padding:12px;background:transparent;color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:.1em;border:1px solid var(--border);border-radius:2px;cursor:pointer;transition:all .2s;}
+.reset-btn:hover{border-color:var(--muted);color:var(--white);}
+
+#reportCard{position:fixed;top:0;left:-9999px;width:760px;background:#0a0a0a;font-family:'Noto Serif TC',serif;z-index:-1;}
+.rcp{width:760px;background:#0a0a0a;padding-bottom:56px;}
+.rcp-hd{background:#14110a;padding:26px 44px 22px;border-bottom:2px solid #c9a84c;text-align:center;margin-bottom:28px;}
+.rcp-brand{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.35em;color:#c9a84c;margin-bottom:8px;}
+.rcp-title{font-size:10px;color:#e8e8e8;margin-bottom:6px;font-family:'Space Mono',monospace;letter-spacing:.2em;}
+.rcp-type{font-size:24px;font-weight:700;color:#e8e8e8;margin-bottom:6px;}
+.rcp-sub{font-size:11px;color:#555;}
+.rcp-bd{padding:0 44px;}
+.rcp-sec{margin-bottom:18px;}
+.rcp-sec-label{font-family:'Space Mono',monospace;font-size:7px;letter-spacing:.3em;color:#c9a84c;margin-bottom:8px;}
+.rcp-block{background:#111;border:1px solid #1e1e1e;border-radius:4px;padding:14px 18px;}
+.rcp-text{font-size:11px;color:#888;line-height:1.9;}
+.rcp-verdict{background:#0d0d0d;border:1px solid #1e1e1e;border-left:3px solid #c0392b;border-radius:4px;padding:14px 18px;margin-bottom:14px;}
+.rcp-vl{font-family:'Space Mono',monospace;font-size:7px;letter-spacing:.3em;color:#c0392b;margin-bottom:6px;}
+.rcp-vt{font-size:13px;font-weight:700;color:#e8e8e8;line-height:1.8;}
+.rcp-antidote{background:#0a0f0a;border:1px solid #1a2a1a;border-left:3px solid #4caf7d;border-radius:4px;padding:14px 18px;margin-bottom:14px;}
+.rcp-al{font-family:'Space Mono',monospace;font-size:7px;letter-spacing:.3em;color:#4caf7d;margin-bottom:6px;}
+.rcp-at{font-size:11px;color:#777;line-height:1.9;}
+.rcp-foot{border-top:1px solid #1a1800;padding:12px 44px;display:flex;justify-content:space-between;}
+.rcp-fl{font-family:'Space Mono',monospace;font-size:7px;color:#2a2a2a;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="brand">凡氏可行｜壞男免疫系統｜第三階</div>
+    <h1>你為什麼戒不掉他</h1>
+    <p>不是你太深情，是你上癮了<br>但你上癮的，不一定是他這個人<br>我們來找出你真正戒不掉的是什麼</p>
+  </div>
+  <div class="rule"></div>
+
+  <div class="progress-wrap">
+    <div class="progress-label"><span id="qLabel">Q1 / 10</span><span id="pctLabel">0%</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="pFill" style="width:0%"></div></div>
+  </div>
+
+  <div id="questionsWrap"></div>
+
+  <div class="result-wrap" id="resultWrap">
+    <div class="result-header">
+      <div class="result-tag">上癮類型診斷</div>
+      <div class="result-type" id="rType"></div>
+      <div class="result-tagline" id="rTagline"></div>
+    </div>
+
+    <div class="scores-wrap" id="scoresWrap"></div>
+
+    <div class="result-block">
+      <div class="rb-label">你上癮的機制</div>
+      <div class="rb-text" id="rMechanism"></div>
+    </div>
+
+    <div class="result-block">
+      <div class="rb-label">你在這段關係裡的樣子</div>
+      <div class="rb-text" id="rPattern"></div>
+    </div>
+
+    <div class="verdict-block">
+      <div class="verdict-label">凡氏說</div>
+      <div class="verdict-text" id="rVerdict"></div>
+    </div>
+
+    <div class="antidote-block">
+      <div class="antidote-label">解毒方向</div>
+      <div class="antidote-text" id="rAntidote"></div>
+    </div>
+
+    <button class="download-btn" onclick="downloadReport()">↓&nbsp;&nbsp;下載我的上癮報告</button>
+    <button class="reset-btn" onclick="resetAll()">重新測驗</button>
+  </div>
+</div>
+<div id="reportCard"></div>
+
+<script>
+const types=[
+  {
+    key:'chosen',name:'被選中感上癮',
+    tagline:'你戒不掉的不是他，是他選你的那個瞬間',
+    color:'#c9a84c',
+    mechanism:'你的大腦把「被他選中」這件事登錄成了一種成就。每次他主動找你、每次他表現出「你很特別」，你的多巴胺就大量分泌。你不是在愛他，你是在追那個「被選中」的感覺——而他只要偶爾給你一點，你就會一直留著',
+    pattern:'你在他面前一直在表演。表演獨立、表演有趣、表演不在乎。因為你潛意識知道你要持續「值得被選中」，否則他可能選別人。你不是在交往，你是在面試',
+    verdict:'幹，你根本不是喜歡他這個人，你是喜歡他選你這個動作。換個人也一樣選你，你一樣會愛上',
+    antidote:'你需要建立一個「不需要被選中也能穩」的內在狀態。當你有自己的生活、自己的標準、自己的出場條件，你就不會再需要靠他的眼神來確認自己的價值'
+  },
+  {
+    key:'feeding',name:'前期投餵上癮',
+    tagline:'你在追的，是那個他還沒消失之前的他',
+    color:'#c97c2b',
+    mechanism:'你的大腦把「前期那個他」存成了最高標準，然後後面所有的行為都拿來跟那個標準比。你覺得「如果我做對什麼，他就會變回那個樣子」。但那個樣子從來不是真的——那只是他在投資你的階段',
+    pattern:'你一直在等他「變回來」。你記得他說過什麼、做過什麼，然後把那些當成他「真正的樣子」。你不是在愛現在的他，你是在戀愛一個已經不存在的版本',
+    verdict:'那個對你好的他是假的，這個讓你痛苦的他才是真的。你不是放不下他，你是放不下那個謊',
+    antidote:'你需要停止用「前期的他」來解讀「現在的他」。他現在怎麼對你，才是答案。前期是他的廣告，現在是他的真面目'
+  },
+  {
+    key:'body',name:'身體連結上癮',
+    tagline:'你們的身體說了很多，但他的嘴沒有',
+    color:'#8b5cf6',
+    mechanism:'身體接觸會讓大腦分泌催產素，這種激素的功能就是「建立依附」。你們有過親密關係之後，你的身體以為你們是「一體的」，但他的腦袋從來沒有這樣認為過。你的身體騙了你的心',
+    pattern:'你很難界定這段關係，因為身體上你們已經很親密，但名分上你們什麼都不是。你一直用身體的親密來說服自己「他是在乎的」。但他在乎的和你在乎的，不是同一件事',
+    verdict:'他享受你的身體，但他沒有打算給你位置。你把床上的事情解讀成感情，他沒有',
+    antidote:'身體和感情是兩件事。在你們沒有清楚位置之前，你的身體付出的每一分都是在用最貴的成本買一個沒有標價的東西'
+  },
+  {
+    key:'sunk',name:'沉沒成本上癮',
+    tagline:'你離不開，是因為你已經付出太多了',
+    color:'#c0392b',
+    mechanism:'你在這段關係裡投入了大量的時間、情緒、身體、等待。你的大腦說：「這些不能白費」。但這個邏輯是錯的——你已經付出的，不會因為你繼續待著而回來。你繼續待著，只是在繼續虧損',
+    pattern:'你一直在計算。計算你付出了多少、計算他欠你什麼、計算如果再等多久他會改變。但這些計算都是假的，因為他沒有在算同一道題',
+    verdict:'你不是在愛他，你是在不甘心。你要的不是他，你要的是那些付出的值回票價。但它不會的',
+    antidote:'沉沒成本不是繼續待著的理由，是離開的理由——因為你繼續待著，只是在讓損失更大。停損，比回本更重要'
+  },
+  {
+    key:'self',name:'自我否定循環',
+    tagline:'你離不開，是因為你覺得都是自己的問題',
+    color:'#ef4444',
+    mechanism:'每次關係出問題，你第一個反應是「是不是我哪裡做錯了」。這讓你一直留在一個「只要我做對，他就會好」的幻覺裡。你把他的行為的責任攬在自己身上，然後用「改變自己」來換取一個他從來沒有承諾過的結果',
+    pattern:'你一直在調整自己。調整語氣、調整頻率、調整出現的方式——希望找到一個他會滿意的版本。但你越調整，他越知道你好控制。你的彈性，是他的武器',
+    verdict:'不是你不夠好，是你太容易相信都是自己的問題。他利用了你的自我懷疑，而你還在幫他',
+    antidote:'當關係讓你覺得「是不是我的問題」，先停下來問：如果真的都是你的問題，為什麼他不直接說清楚，而是用消失和忽冷忽熱來回應你'
+  }
+];
+
+const questions=[
+  {
+    text:'他消失了三天沒回你，你的第一反應是',
+    sub:'選一個最接近的',
+    opts:[
+      {text:'開始擔心是不是他不喜歡我了',sub:'',scores:{chosen:3,self:2}},
+      {text:'想起他前期有多好，覺得一定可以變回那樣',sub:'',scores:{feeding:3,sunk:1}},
+      {text:'開始回想我們最後一次見面的感覺',sub:'',scores:{body:3,chosen:1}},
+      {text:'算了一下我為他付出了多少，覺得不甘心',sub:'',scores:{sunk:3,self:1}},
+      {text:'反省自己是不是說錯了什麼',sub:'',scores:{self:3,chosen:1}},
+    ]
+  },
+  {
+    text:'如果有人問你「你喜歡他什麼」，你會怎麼回答',
+    sub:'',
+    opts:[
+      {text:'他選上我的感覺，讓我覺得自己很特別',sub:'',scores:{chosen:3,feeding:1}},
+      {text:'他剛開始的樣子，那個時候的他真的很好',sub:'',scores:{feeding:3,sunk:1}},
+      {text:'我們在一起的感覺，那種親密感',sub:'',scores:{body:3,feeding:1}},
+      {text:'我說不清楚，但我已經投入這麼多了',sub:'',scores:{sunk:3,self:1}},
+      {text:'我不知道，但我覺得是我哪裡讓他不滿意',sub:'',scores:{self:3,sunk:1}},
+    ]
+  },
+  {
+    text:'他突然補糖回來，你的第一個念頭是',
+    sub:'',
+    opts:[
+      {text:'他終於又想到我了，我又是他選的那個',sub:'',scores:{chosen:3,feeding:1}},
+      {text:'他變回那個樣子了，果然沒有白等',sub:'',scores:{feeding:3,chosen:1}},
+      {text:'好想見他，想那種感覺',sub:'',scores:{body:3,self:1}},
+      {text:'終於，我等了這麼久總算有點回報',sub:'',scores:{sunk:3,feeding:1}},
+      {text:'是不是我之前改變了什麼所以他回來了',sub:'',scores:{self:3,chosen:1}},
+    ]
+  },
+  {
+    text:'你最常對朋友說的一句話是',
+    sub:'',
+    opts:[
+      {text:'「他喜歡我，只是時機不對」',sub:'',scores:{chosen:2,feeding:2}},
+      {text:'「他以前不是這樣的」',sub:'',scores:{feeding:3,sunk:1}},
+      {text:'「我們之間有感覺，這是真的」',sub:'',scores:{body:3,chosen:1}},
+      {text:'「我已經付出這麼多，不可能就這樣算了」',sub:'',scores:{sunk:3,self:1}},
+      {text:'「可能是我哪裡做得不夠好」',sub:'',scores:{self:3,body:1}},
+    ]
+  },
+  {
+    text:'你在這段關係裡最痛苦的時刻是',
+    sub:'',
+    opts:[
+      {text:'他對別人好但對我冷的時候',sub:'',scores:{chosen:3,self:2}},
+      {text:'我意識到他跟前期完全不一樣的時候',sub:'',scores:{feeding:3,sunk:1}},
+      {text:'我們見面之後他又消失的時候',sub:'',scores:{body:3,feeding:1}},
+      {text:'想到自己付出了這麼多卻什麼都得不到',sub:'',scores:{sunk:3,self:1}},
+      {text:'不知道自己做錯了什麼又不敢問的時候',sub:'',scores:{self:3,chosen:1}},
+    ]
+  },
+  {
+    text:'如果他現在突然說「我想清楚了，我們在一起吧」你的反應',
+    sub:'',
+    opts:[
+      {text:'立刻答應，終於被他選上了',sub:'',scores:{chosen:3,sunk:1}},
+      {text:'立刻答應，他終於變回那個樣子了',sub:'',scores:{feeding:3,chosen:1}},
+      {text:'立刻說好，終於可以光明正大在一起',sub:'',scores:{body:3,self:1}},
+      {text:'立刻答應，這樣我付出的才有意義',sub:'',scores:{sunk:3,feeding:1}},
+      {text:'很驚喜，覺得是自己哪裡改變了所以他願意了',sub:'',scores:{self:3,chosen:1}},
+    ]
+  },
+  {
+    text:'你覺得自己最難做到的事是',
+    sub:'',
+    opts:[
+      {text:'在他冷淡的時候不去求他的關注',sub:'',scores:{chosen:3,self:2}},
+      {text:'停止把現在的他跟以前的他比較',sub:'',scores:{feeding:3,body:1}},
+      {text:'在沒有見面的日子裡不去想那種感覺',sub:'',scores:{body:3,feeding:1}},
+      {text:'接受自己之前的付出就是白費了',sub:'',scores:{sunk:3,self:1}},
+      {text:'停止反省自己是不是哪裡出了問題',sub:'',scores:{self:3,body:1}},
+    ]
+  },
+  {
+    text:'你做過最「低位」的事是',
+    sub:'',
+    opts:[
+      {text:'主動讓自己出現在他面前，希望他注意到我',sub:'',scores:{chosen:3,self:1}},
+      {text:'存下他以前說過的話，偶爾拿出來看',sub:'',scores:{feeding:3,body:1}},
+      {text:'在他消失之後還是忍不住想找他見面',sub:'',scores:{body:3,sunk:1}},
+      {text:'明明知道不值得，但還是繼續投入時間和情緒',sub:'',scores:{sunk:3,feeding:1}},
+      {text:'改變了自己很多習慣和個性，希望讓他更滿意',sub:'',scores:{self:3,chosen:1}},
+    ]
+  },
+  {
+    text:'你心裡最怕的一件事是',
+    sub:'',
+    opts:[
+      {text:'他把那個「特別」給了別人',sub:'',scores:{chosen:3,self:1}},
+      {text:'那個前期的他永遠不會回來了',sub:'',scores:{feeding:3,chosen:1}},
+      {text:'再也沒有那種和他在一起的感覺',sub:'',scores:{body:3,feeding:1}},
+      {text:'這一切最後什麼都沒有，全部白費',sub:'',scores:{sunk:3,body:1}},
+      {text:'是我的問題，換了誰都一樣',sub:'',scores:{self:3,sunk:1}},
+    ]
+  },
+  {
+    text:'如果你要用一句話形容自己在這段關係裡的狀態',
+    sub:'',
+    opts:[
+      {text:'我一直在等他確認我對他是特別的',sub:'',scores:{chosen:3,self:1}},
+      {text:'我一直在等他變回那個讓我愛上他的樣子',sub:'',scores:{feeding:3,sunk:1}},
+      {text:'我一直在等下一次見面',sub:'',scores:{body:3,chosen:1}},
+      {text:'我一直在等那些付出的值回票價',sub:'',scores:{sunk:3,self:1}},
+      {text:'我一直在等自己搞清楚到底哪裡出了問題',sub:'',scores:{self:3,body:1}},
+    ]
+  },
+];
+
+const TOTAL=questions.length;
+let current=0;
+let selected=new Array(TOTAL).fill(null);
+let typeTotals={chosen:0,feeding:0,body:0,sunk:0,self:0};
+
+function buildQuestions(){
+  const w=document.getElementById('questionsWrap');
+  questions.forEach((q,qi)=>{
+    const div=document.createElement('div');
+    div.className='q-wrap'+(qi===0?' active':'');
+    div.id='q'+qi;
+    div.innerHTML=`<div class="q-num">Q${String(qi+1).padStart(2,'0')} / ${String(TOTAL).padStart(2,'0')}</div>
+    <div class="q-text">${q.text}</div>
+    ${q.sub?`<div class="q-sub">${q.sub}</div>`:''}
+    <div class="options" id="opts${qi}">
+      ${q.opts.map((o,oi)=>`
+        <div class="opt" onclick="selectOpt(${qi},${oi},this)" id="opt${qi}_${oi}">
+          <div class="opt-dot"></div>
+          <div><div class="opt-text">${o.text}</div>${o.sub?`<div class="opt-sub">${o.sub}</div>`:''}</div>
+        </div>`).join('')}
+    </div>
+    <div class="nav-row">
+      ${qi>0?`<button class="btn btn-back" onclick="goQ(${qi-1})">← 上一題</button>`:''}
+      <button class="btn btn-next" id="btnNext${qi}" onclick="goQ(${qi+1})" ${selected[qi]===null?'disabled':''}>
+        ${qi===TOTAL-1?'查看結果':'下一題 →'}
+      </button>
+    </div>`;
+    w.appendChild(div);
+  });
+}
+
+function selectOpt(qi,oi,el){
+  document.querySelectorAll(`#opts${qi} .opt`).forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+  selected[qi]=oi;
+  document.getElementById('btnNext'+qi).disabled=false;
+}
+
+function goQ(idx){
+  if(idx>=TOTAL){showResult();return;}
+  document.querySelectorAll('.q-wrap').forEach(q=>q.classList.remove('active'));
+  document.getElementById('q'+idx).classList.add('active');
+  current=idx;
+  updateProgress();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function updateProgress(){
+  const pct=Math.round((current/TOTAL)*100);
+  document.getElementById('pFill').style.width=pct+'%';
+  document.getElementById('qLabel').textContent=`Q${current+1} / ${TOTAL}`;
+  document.getElementById('pctLabel').textContent=pct+'%';
+}
+
+function showResult(){
+  // Calculate scores
+  typeTotals={chosen:0,feeding:0,body:0,sunk:0,self:0};
+  selected.forEach((sel,qi)=>{
+    if(sel===null)return;
+    const scores=questions[qi].opts[sel].scores;
+    Object.entries(scores).forEach(([k,v])=>typeTotals[k]+=v);
+  });
+
+  const sorted=Object.entries(typeTotals).sort((a,b)=>b[1]-a[1]);
+  const topKey=sorted[0][0];
+  const topType=types.find(t=>t.key===topKey);
+  const maxScore=sorted[0][1];
+
+  document.getElementById('questionsWrap').style.display='none';
+  document.querySelector('.progress-wrap').style.display='none';
+
+  const rw=document.getElementById('resultWrap');
+  rw.classList.add('show');
+
+  document.getElementById('rType').textContent=topType.name;
+  document.getElementById('rType').style.color=topType.color;
+  document.getElementById('rTagline').textContent=topType.tagline;
+  document.getElementById('rMechanism').textContent=topType.mechanism;
+  document.getElementById('rPattern').textContent=topType.pattern;
+  document.getElementById('rVerdict').textContent=topType.verdict;
+  document.getElementById('rAntidote').textContent=topType.antidote;
+
+  // Score bars
+  const sw=document.getElementById('scoresWrap');
+  sw.innerHTML='<div class="rb-label" style="font-family:var(--mono);font-size:9px;letter-spacing:.25em;color:var(--gold);margin-bottom:12px;">各上癮類型分佈</div>';
+  sorted.forEach(([key,val])=>{
+    const t=types.find(t=>t.key===key);
+    const pct=Math.round((val/maxScore)*100);
+    sw.innerHTML+=`<div class="score-row">
+      <div class="score-row-label"><span class="score-name">${t.name}</span><span class="score-pct">${pct}%</span></div>
+      <div class="score-track"><div class="score-bar" style="width:${pct}%;background:${t.color}"></div></div>
+    </div>`;
+  });
+
+  rw.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function downloadReport(){
+  const topKey=Object.entries(typeTotals).sort((a,b)=>b[1]-a[1])[0][0];
+  const topType=types.find(t=>t.key===topKey);
+  const today=new Date();
+  const ds=`${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`;
+
+  const sorted=Object.entries(typeTotals).sort((a,b)=>b[1]-a[1]);
+  const maxScore=sorted[0][1];
+  const barsHtml=sorted.map(([key,val])=>{
+    const t=types.find(t=>t.key===key);
+    const pct=Math.round((val/maxScore)*100);
+    return `<div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:8px;color:#666;margin-bottom:4px;"><span style="color:#aaa">${t.name}</span><span>${pct}%</span></div>
+      <div style="height:3px;background:#1e1e1e;border-radius:2px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${t.color};border-radius:2px;"></div></div>
+    </div>`;
+  }).join('');
+
+  const rc=document.getElementById('reportCard');
+  rc.innerHTML=`<div class="rcp">
+    <div class="rcp-hd">
+      <div class="rcp-brand">凡氏可行 · 壞男免疫系統 · ADDICTION TYPE REPORT</div>
+      <div class="rcp-title">上癮類型診斷</div>
+      <div class="rcp-type" style="color:${topType.color}">${topType.name}</div>
+      <div class="rcp-sub">${topType.tagline} · ${ds}</div>
+    </div>
+    <div class="rcp-bd">
+      <div class="rcp-sec">
+        <div class="rcp-sec-label">各上癮類型分佈</div>
+        <div class="rcp-block">${barsHtml}</div>
+      </div>
+      <div class="rcp-sec">
+        <div class="rcp-sec-label">你上癮的機制</div>
+        <div class="rcp-block"><div class="rcp-text">${topType.mechanism}</div></div>
+      </div>
+      <div class="rcp-sec">
+        <div class="rcp-sec-label">你在這段關係裡的樣子</div>
+        <div class="rcp-block"><div class="rcp-text">${topType.pattern}</div></div>
+      </div>
+      <div class="rcp-verdict">
+        <div class="rcp-vl">凡氏說</div>
+        <div class="rcp-vt">${topType.verdict}</div>
+      </div>
+      <div class="rcp-antidote">
+        <div class="rcp-al">解毒方向</div>
+        <div class="rcp-at">${topType.antidote}</div>
+      </div>
+    </div>
+    <div class="rcp-foot">
+      <span class="rcp-fl">凡氏可行 / 壞男免疫系統 / 第三階上癮類型報告</span>
+      <span class="rcp-fl">版權所有</span>
+    </div>
+  </div>`;
+
+  await document.fonts.ready;
+  await new Promise(r=>setTimeout(r,700));
+
+  const page=rc.querySelector('.rcp');
+  page.style.height='auto';page.style.minHeight='unset';
+  const canvas=await html2canvas(page,{scale:2,useCORS:true,backgroundColor:'#0a0a0a',logging:false,width:760,height:page.scrollHeight,windowWidth:760,windowHeight:page.scrollHeight});
+  const imgData=canvas.toDataURL('image/jpeg',0.95);
+  const W=210,H=297;
+  const imgW=W,imgH=(canvas.height/canvas.width)*W;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  if(imgH<=H){doc.addImage(imgData,'JPEG',0,0,imgW,imgH);}
+  else{
+    const ratio=canvas.width/W,pageH=H*ratio;
+    let yOff=0,pg=0;
+    while(yOff<canvas.height){
+      const tmp=document.createElement('canvas');tmp.width=canvas.width;tmp.height=Math.min(pageH,canvas.height-yOff);
+      tmp.getContext('2d').drawImage(canvas,0,-yOff);
+      if(pg>0)doc.addPage();
+      doc.addImage(tmp.toDataURL('image/jpeg',0.95),'JPEG',0,0,W,tmp.height/ratio);
+      yOff+=pageH;pg++;
+    }
+  }
+  doc.save(`凡氏上癮報告_${ds.replace(/\./g,'')}.pdf`);
+  rc.innerHTML='';
+}
+
+function resetAll(){
+  selected=new Array(TOTAL).fill(null);
+  typeTotals={chosen:0,feeding:0,body:0,sunk:0,self:0};
+  current=0;
+  document.querySelectorAll('.opt').forEach(o=>o.classList.remove('selected'));
+  document.querySelectorAll('[id^=btnNext]').forEach(b=>b.disabled=true);
+  document.getElementById('resultWrap').classList.remove('show');
+  document.getElementById('questionsWrap').style.display='block';
+  document.querySelector('.progress-wrap').style.display='block';
+  document.querySelectorAll('.q-wrap').forEach(q=>q.classList.remove('active'));
+  document.getElementById('q0').classList.add('active');
+  updateProgress();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+buildQuestions();
+</script>
+</body>
+</html>
